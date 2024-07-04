@@ -1,0 +1,119 @@
+ // Update Using req.body
+  // // Destructure email from body
+  // const { currentEmail, newEmail } = req.body;
+
+  // // Update Data with New Email
+  // const updateData = { ...req.body, email: newEmail };
+
+  // // Using Object.assign
+  // // const updateData = Object.assign({}, req.body, { email: newEmail });
+  // // Manually assigning properties
+  // // const updateData = {};
+  // // for (const key in req.body) {
+  // //     updateData[key] = req.body[key];
+  // // }
+  // // updateData.email = newEmail;
+
+  // // Delete Old Email
+  // delete updateData.currentEmail;
+  // try {
+  //   const result = await User.findOneAndUpdate(
+  //     { email: currentEmail }, // Find the document using the old email
+  //     { $set: updateData }, // Update document, including setting the new email
+  //     { new: true, runValidators: true }
+  //   );
+
+  // Update Using req.params
+  const email = req.params.email;
+  try {
+    const result = await User.findOneAndUpdate({ email: email }, req.body, {
+      new: true,
+    });
+
+
+-----------------------------------------------------------------------------------------------------------
+how to verify token and get token info
+    // const checkAuth = async (req, res, next) => {
+//   let token;
+//   const { authorization } = req.headers;
+//   if (authorization && authorization.startsWith("Bearer")) {
+//     try {
+//       // Get Token from Headers
+//       token = authorization.split(" ")[1];
+//       // Decode the JWT token to extract its payload
+//       const decodedToken = jwt.decode(token);
+
+//       // Access the "id" claim from the decoded token
+//       const userId = decodedToken ? decodedToken.id : null;
+
+//       // Get User From Token
+
+//       req.user = await User.findById(userId).select("-password");
+//       // console.log(userId);
+//       // console.log(req.user);
+//       next();
+//     } catch (error) {
+//       console.log(error);
+//       res.send({ Status: "failed", Message: "Unauthorized User" });
+//     }
+//   }
+
+//   if (!token) {
+//     res.send({ Status: "failed", Message: "Unauthorized User , No Token" });
+//   }
+// };
+
+// const isAdmin = async (req, res, next) => {
+//   // console.log(req.user);
+//   if (!req.user) {
+//     return res
+//       .status(401)
+//       .json({ success: false, message: "Unauthorized User" });
+//   }
+//   const { email } = req.user;
+//   const adminUser = await User.findOne({ email });
+//   if (adminUser.role !== "Admin") {
+//     return res.json({
+//       sucess: false,
+//       message: "You are not Admin",
+//     });
+//   } else {
+//     next();
+//   }
+// };
+------------------------------------------------------------------------------------------------------------------
+same above code with  different approch
+-----------------------------------------------------------------------------------------------------------
+const jwt = require("jsonwebtoken");
+const User = require("../models/userModel.js");
+
+var checkAuth = async (req, res, next) => {
+  let token;
+  const { authorization } = req.headers;
+  if (authorization && authorization.startsWith("Bearer")) {
+    try {
+      // Get Token from Headers
+      token = authorization.split(" ")[1];
+
+      // Verify Token
+      const userId = jwt.verify(token, process.env.JWT_SECRET);
+
+      // Get User From Token
+      req.user = await User.findById(userId && userId.id).select("-password");
+      next();
+    } catch (error) {
+      console.log(error);
+      res.send({ Status: "failed", Message: "Unauthorized User" });
+    }
+  }
+
+  if (!token) {
+    res.send({ Status: "failed", Message: "Unauthorized User , No Token" });
+  }
+};
+
+const isAdmin = async (req, res, next) => {
+  console.log(req.user);
+};
+
+module.exports = { checkAuth, isAdmin };
